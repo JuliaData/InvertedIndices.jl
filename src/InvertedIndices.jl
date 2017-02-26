@@ -7,10 +7,7 @@ struct InvertedIndex{T}
 end
 const Not = InvertedIndex
 
-# nindices(::InvertedIndex) = 1
-# nindices{N}(::InvertedIndex{<:AbstractArray{Bool,N}}}) = N
-# nindices{N}(::InvertedIndex{<:AbstractArray{CartesianIndex{N}}}}) = N
-
+# TODO: Remove once Base trues becomes indices-aware
 @inline trues(tup) = Base.trues(map(Base.unsafe_length, tup))
 
 @inline function Base.to_indices(A, inds, I::Tuple{InvertedIndex, Vararg{Any}})
@@ -20,8 +17,11 @@ const Not = InvertedIndex
 end
 
 @inline spanned_indices(inds, I::Tuple{InvertedIndex,Vararg{Any}}) = (Base.uncolon(inds, (:, Base.tail(I)...)),)
-@inline spanned_indices(inds, I::Tuple{InvertedIndex{<:AbstractVector},Vararg{Any}}) = (Base.uncolon(inds, (:, Base.tail(I)...)),)
-@inline function spanned_indices{N}(inds, I::Tuple{InvertedIndex{<:AbstractArray{Bool,N}},Vararg{Any}})
+
+NIdx{N} = Union{CartesianIndex{N}, AbstractArray{CartesianIndex{N}}, AbstractArray{Bool,N}}
+@inline spanned_indices(inds, I::Tuple{InvertedIndex{<:NIdx{0}},Vararg{Any}}) = ()
+@inline spanned_indices(inds, I::Tuple{InvertedIndex{<:NIdx{1}},Vararg{Any}}) = (Base.uncolon(inds, (:, Base.tail(I)...)),)
+@inline function spanned_indices{N}(inds, I::Tuple{InvertedIndex{<:NIdx{N}},Vararg{Any}})
     heads, tails = Base.IteratorsMD.split(inds, Val{N})
     (Base.front(heads)..., Base.uncolon((heads[end], tails...), (:, Base.tail(I)...)))
 end

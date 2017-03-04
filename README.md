@@ -5,7 +5,8 @@
 [![Code coverage](https://codecov.io/gh/mbauman/InvertedIndices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/mbauman/InvertedIndices.jl)
 
 This very small package just exports one type: the `InvertedIndex`, or `Not`
-for short. It can wrap any supported index type.
+for short. It can wrap any supported index type and may be used as an index
+into any `AbstractArray` subtype, including OffsetArrays.
 
 Upon indexing into an array, the `InvertedIndex` behaves like a 1-dimensional
 collection of the indices of the array that are not in the index it wraps. Bounds

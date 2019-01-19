@@ -39,7 +39,7 @@ end
 NIdx{N} = Union{CartesianIndex{N}, AbstractArray{CartesianIndex{N}}, AbstractArray{Bool,N}}
 @inline spanned_indices(inds, I::Tuple{InvertedIndex{<:NIdx{0}},Vararg{Any}}) = ()
 @inline spanned_indices(inds, I::Tuple{InvertedIndex{<:NIdx{1}},Vararg{Any}}) = (Base.uncolon(inds, (:, Base.tail(I)...)).indices,)
-@inline function spanned_indices{N}(inds, I::Tuple{InvertedIndex{<:NIdx{N}},Vararg{Any}})
+@inline function spanned_indices(inds, I::Tuple{InvertedIndex{<:NIdx{N}},Vararg{Any}}) where N
     heads, tails = Base.IteratorsMD.split(inds, Val{N})
     (Base.front(heads)..., Base.uncolon((heads[end], tails...), (:, Base.tail(I)...)).indices)
 end

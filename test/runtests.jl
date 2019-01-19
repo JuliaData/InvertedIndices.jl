@@ -1,5 +1,5 @@
 using InvertedIndices
-using Base.Test
+using Test
 using OffsetArrays
 
 @testset "0-d" begin

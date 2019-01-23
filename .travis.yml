@@ -16,4 +16,4 @@ notifications:
 #  - julia -e 'Pkg.clone(pwd()); Pkg.build("InvertedIndices"); Pkg.test("InvertedIndices"; coverage=true)'
 after_success:
   # push coverage results to Codecov
-  - julia -e 'using Pkg; cd(Pkg.dir("InvertedIndices")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'

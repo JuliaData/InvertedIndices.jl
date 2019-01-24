@@ -87,3 +87,7 @@ end
     @test A[Not(R[1:2])] == (@view A[Not(R[1:2])]) == A[LinearIndices(A)[3:end]]
     @test A[Not(iseven.(A))] == (@view A[Not(iseven.(A))]) == A[isodd.(A)] == collect(-9:2:13)
 end
+
+@testset "Utilities" begin
+    @test sprint(show, InvertedIndices.InvertedIndexIterator([2,4], 1:5)) == "[1, 3, 5]"
+end

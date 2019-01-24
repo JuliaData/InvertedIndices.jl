@@ -79,7 +79,6 @@ Base.getindex(Z::ZeroDArray) = Z.x
 
 # Be careful with CartesianIndex as they splat out to a variable number of new indices and do not iterate
 function Base.to_indices(A, inds, I::Tuple{InvertedIndex{<:CartesianIndex}, Vararg{Any}})
-    new_indices = to_indices(A, inds, (I[1].skip, tail(I)...))
     skips = ZeroDArray(I[1].skip)
     picks, tails = spanned_indices(inds, skips)
     return (InvertedIndexIterator(skips, picks), to_indices(A, tails, tail(I))...)

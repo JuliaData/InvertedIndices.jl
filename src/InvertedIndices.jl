@@ -70,7 +70,12 @@ _should_skip(s::CartesianIndex{1}, p::Integer) = s.I[1] == p
 
 @inline Base.ensure_indexable(I::Tuple{InvertedIndexIterator, Vararg{Any}}) = (collect(I[1]), Base.ensure_indexable(tail(I))...)
 
-Base.show(io::IO, I::InvertedIndexIterator) = show(io, collect(I))
+# This is a little hacky, but we display InvertedIndexIterators like the `Not`s they come from
+function Base.show(io::IO, I::InvertedIndexIterator)
+    print(io, "Not(")
+    show(io, I.skips)
+    print(io, ")")
+end
 
 # Inverted indices must be sorted and unique to ensure that iterating over
 # them and the axes simultaneously will work appropriately. Doing this fully

@@ -11,6 +11,7 @@ using OffsetArrays
     @test A[] == 0
     A[Not(fill(A.==2))] .= 1
     @test A[] == 1
+    @test A[Not([1,1])] == []
 end
 
 @testset "1-d readonly" for A in (-10:13, reshape(-10:13,2,:), reshape(-10:13,3,2,:))
@@ -21,6 +22,8 @@ end
     @test A[Not(iseven.(A))] == A[isodd.(A)] == collect(-9:2:13)
     @test A[Not([])] == A[collect(1:end)] == collect(-10:13)
     @test A[Not(1:end)] == A[Not(:)] == A[[]] == []
+    @test A[Not([1,1,1,2,2])] == A[3:end]
+    @test A[Not([end,end,end,end-1,end-1])] == A[1:end-2]
 
     @test_throws BoundsError A[Not(0)]
     @test_throws BoundsError A[Not(end+1)]
@@ -38,6 +41,8 @@ end
     @test A[Not(iseven.(A))] == A[isodd.(A)]
     @test A[Not([])] == A[collect(f:l)] == collect(-10:13)
     @test A[Not(f:l)] == A[Not(:)] == A[[]] == []
+    @test A[Not([f,f,f,f+1,f+1])] == A[f+2:l]
+    @test A[Not([l,l,l,l-1,l-1])] == A[f:l-2]
 
     @test_throws BoundsError A[Not(f-1)]
     @test_throws BoundsError A[Not(l+1)]
@@ -70,6 +75,9 @@ end
     @test A[Not(first(R))] == (@view A[Not(first(R))]) == A[2:end]
     @test A[Not(R[1:2])] == (@view A[Not(R[1:2])]) == A[3:end]
     @test A[Not(iseven.(A))] == (@view A[Not(iseven.(A))]) == A[isodd.(A)] == collect(-9:2:13)
+    @test A[Not([1,1,1,2,2]), Not([2,2,1,1,1])] == A[3:end, 3:end]
+    @test A[Not([end,end-1,end,end-1]), Not([end,end-1,end,end-1])] == A[1:end-2, 1:end-2]
+    @test A[Not([2,2,1,1,1]), Not([end,end-1,end,end-1])] == A[3:end, 1:end-2]
 end
 
 @testset "2-d offset readonly" for A in (OffsetArray(reshape(-10:13,3,:), -1, 0), OffsetArray(reshape(-10:13,3,4,:), -10, 20, -30),)

@@ -60,13 +60,20 @@ _should_skip(s::CartesianIndex{1}, p::Integer) = s.I[1] == p
 
 Base.show(io::IO, I::InvertedIndexIterator) = show(io, collect(I))
 
-# We use a custom sort method that supports Base.LogicalIndex and CartesianIndex
-sort(A::AbstractArray) = Base.sort(A)
-sort(A::Union{Number,CartesianIndex,Base.LogicalIndex}) = A
+# Inverted indices must be sorted and unique to ensure that iterating over
+# them and the axes simultaneously will work appropriately. Doing this fully
+# generically is a challenge. It's a little annoying to need to take a pass
+# through the inverted index before actually doing the indexing.
+uniquesort(A::AbstractArray) = uniquesort(vec(A))
+uniquesort(A::DenseVector) = issorted(A, lt=(<=)) ? A : (unique! ∘ sort)(A)
+uniquesort(A::AbstractVector) = issorted(A, lt=(<=)) ? A : (unique ∘ sort)(A)
+uniquesort(r::AbstractRange) = step(r) > 0 ? r : step(r) == 0 ? r[end:end] : reverse(r)
+uniquesort(A::Base.LogicalIndex) = A
+uniquesort(x) = x
 
 @inline function Base.to_indices(A, inds, I::Tuple{InvertedIndex, Vararg{Any}})
     new_indices = to_indices(A, inds, (I[1].skip, tail(I)...))
-    skips = sort(new_indices[1])
+    skips = uniquesort(new_indices[1])
     picks = spanned_indices(inds, skips)[1]
     return (InvertedIndexIterator(skips, picks), tail(new_indices)...)
 end

@@ -22,6 +22,18 @@ struct InvertedIndex{S}
     skip::S
 end
 const Not = InvertedIndex
+# Support easily inverting multiple indices without a temporary array in Not([...])
+InvertedIndex(i₁::Integer, i₂::Integer, iₓ::Integer...) = InvertedIndex(TupleVector((i₁, i₂, iₓ...)))
+
+# A very simple and primitive static array to avoid allocations for Not(1,2,3) while fulfilling the indexing API
+struct TupleVector{T<:Tuple} <: AbstractVector{Int}
+    data::T
+end
+Base.size(::TupleVector{<:NTuple{N}}) where {N} = (N,)
+@inline function Base.getindex(t::TupleVector, i::Int)
+    @boundscheck checkbounds(t, i)
+    return @inbounds t.data[i]
+end
 
 # Like Base.LogicalIndex, the InvertedIndexIterator is a pseudo-vector that is
 # just used as an iterator and does not support getindex.

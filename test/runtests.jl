@@ -102,7 +102,5 @@ end
     @test sprint(show, InvertedIndices.InvertedIndexIterator([2,4], 1:5)) == "[1, 3, 5]"
     A = [1]
     ex = try A[Not(2,3)] catch ex; ex end
-    buf = IOBuffer()
-    Base.showerror(buf, ex)
-    @test occursin("Not([2, 3])", String(take!(buf)))
+    @test occursin("Not([2, 3])", sprint(Base.showerror, ex))
 end

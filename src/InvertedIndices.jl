@@ -4,6 +4,13 @@ export InvertedIndex, Not
 
 using Base: tail
 
+struct InvertedIndex{S}
+    skip::S
+end
+const Not = InvertedIndex
+# Support easily inverting multiple indices without a temporary array in Not([...])
+InvertedIndex(i₁::Integer, i₂::Integer, iₓ::Integer...) = InvertedIndex(TupleVector((i₁, i₂, iₓ...)))
+
 """
     InvertedIndex(idx)
     Not(idx)
@@ -18,12 +25,8 @@ checked to ensure that all indices in `idx` are within the bounds of the array
 dimensions (like a multidimensional logical mask or `CartesianIndex`), then the
 inverted index will similarly span multiple dimensions.
 """
-struct InvertedIndex{S}
-    skip::S
-end
-const Not = InvertedIndex
-# Support easily inverting multiple indices without a temporary array in Not([...])
-InvertedIndex(i₁::Integer, i₂::Integer, iₓ::Integer...) = InvertedIndex(TupleVector((i₁, i₂, iₓ...)))
+InvertedIndex, Not
+
 
 # A very simple and primitive static array to avoid allocations for Not(1,2,3) while fulfilling the indexing API
 struct TupleVector{T<:Tuple} <: AbstractVector{Int}

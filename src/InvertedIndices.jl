@@ -9,7 +9,9 @@ struct InvertedIndex{S}
 end
 const Not = InvertedIndex
 # Support easily inverting multiple indices without a temporary array in Not([...])
-InvertedIndex(i₁::Integer, i₂::Integer, iₓ::Integer...) = InvertedIndex(TupleVector((i₁, i₂, iₓ...)))
+function InvertedIndex(i₁::T, i₂::T, iₓ::T...)  where T
+    InvertedIndex(TupleVector((i₁, i₂, iₓ...)))
+end
 
 """
     InvertedIndex(idx)
@@ -29,7 +31,7 @@ InvertedIndex, Not
 
 
 # A very simple and primitive static array to avoid allocations for Not(1,2,3) while fulfilling the indexing API
-struct TupleVector{T<:Tuple} <: AbstractVector{Int}
+struct TupleVector{T<:Tuple} <: AbstractVector{V where V}
     data::T
 end
 Base.size(::TupleVector{<:NTuple{N}}) where {N} = (N,)

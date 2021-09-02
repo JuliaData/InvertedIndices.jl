@@ -30,10 +30,8 @@ InvertedIndex, Not
 # A wrapper for `InvertedIndex` if it is used in broadcasting context.
 # Since `InvertedIndex` does not have a reference to the collection it applies to
 # it is impossible to define its axes properly.
-# Therefore it is a responsiblitie of the caller to properly resolve the handling
-# of the broadcast result. Intended example use in DataFrames.jl:
-# `combine(df, Not(:x) .=> fun)`
-# that would apply transformation `fun` to all columns of `df` except `:x`.
+# Therefore it is the responsiblity of the caller to properly resolve the handling
+# of the broadcast result.
 struct BroadcastedInvertedIndex
     x::InvertedIndex
 end

@@ -104,3 +104,39 @@ end
     ex = try A[Not(2,3)] catch ex; ex end
     @test occursin("Not([2, 3])", sprint(Base.showerror, ex))
 end
+
+@testset "broadcasting" begin
+    # these scenarios should be later properly handled by DataFrames.jl by expanding first dimension as appropriate
+    @test Not(1) .=> sin == InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin
+    @test Not(1) .=> [sin cos] ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos]
+    @test Not(1) .=> [sin cos] .=> [:a, :b, :c] ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => :a InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => :a
+           InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => :b InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => :b
+           InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => :c InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => :c]
+    @test Not(1) .=> [sin cos] .=> Not(1) ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => InvertedIndices.BroadcastedInvertedIndex(Not(1)) InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => InvertedIndices.BroadcastedInvertedIndex(Not(1))]
+    @test Not(1) .=> [sin, cos] ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin, InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos]
+    @test Not(1) .=> [sin, cos] .=> [:a, :b] ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => :a, InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => :b]
+    @test Not(1) .=> [sin, cos] .=> Not(1) ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => InvertedIndices.BroadcastedInvertedIndex(Not(1)), InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => InvertedIndices.BroadcastedInvertedIndex(Not(1))]
+
+    @test identity.(Not(1)) == InvertedIndices.BroadcastedInvertedIndex(Not(1))
+    @test identity.(Not(1)) .=> sin == InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin
+    @test identity.(Not(1)) .=> [sin cos] ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos]
+    @test identity.(Not(1)) .=> [sin cos] .=> [:a, :b, :c] ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => :a InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => :a
+           InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => :b InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => :b
+           InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => :c InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => :c]
+    @test identity.(Not(1)) .=> [sin cos] .=> Not(1) ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => InvertedIndices.BroadcastedInvertedIndex(Not(1)) InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => InvertedIndices.BroadcastedInvertedIndex(Not(1))]
+    @test identity.(Not(1)) .=> [sin, cos] ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin, InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos]
+    @test identity.(Not(1)) .=> [sin, cos] .=> [:a, :b] ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => :a, InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => :b]
+    @test identity.(Not(1)) .=> [sin, cos] .=> Not(1) ==
+          [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => InvertedIndices.BroadcastedInvertedIndex(Not(1)), InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => InvertedIndices.BroadcastedInvertedIndex(Not(1))]
+end

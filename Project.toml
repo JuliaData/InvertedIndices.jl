@@ -1,5 +1,6 @@
 name = "InvertedIndices"
 uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
+version = "1.0.0"
 
 [compat]
 julia = "0.7, 1.0"

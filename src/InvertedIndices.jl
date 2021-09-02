@@ -27,16 +27,21 @@ inverted index will similarly span multiple dimensions.
 """
 InvertedIndex, Not
 
-# A wrapper for `InvertedIndex` if it is used in broadcasting context.
-# Since `InvertedIndex` does not have a reference to the collection it applies to
-# it is impossible to define its axes properly.
-# Therefore it is the responsiblity of the caller to properly resolve the handling
-# of the broadcast result.
+"""
+    BroadcastedInvertedIndex(x::Not)
+
+A wrapper for `InvertedIndex` if it is used in broadcasting context.
+Since `InvertedIndex` does not have a reference to the collection it applies to
+it is impossible to define its `axes` eagerly.
+Therefore it is the responsiblity of the caller to resolve the handling
+of the broadcast result.
+
+# Examples
 struct BroadcastedInvertedIndex
-    x::InvertedIndex
+    sel::InvertedIndex
 end
 
-Base.Broadcast.broadcastable(x::Not) = Ref(BroadcastedInvertedIndex(x))
+Base.Broadcast.broadcastable(x::InvertedIndex) = Ref(BroadcastedInvertedIndex(x))
 
 # A very simple and primitive static array to avoid allocations for Not(1,2,3) while fulfilling the indexing API
 struct TupleVector{T<:Tuple} <: AbstractVector{Int}

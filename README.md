@@ -1,8 +1,7 @@
 # InvertedIndices
 
-[![Build status](https://travis-ci.org/mbauman/InvertedIndices.jl.svg?branch=master)](https://travis-ci.org/mbauman/InvertedIndices.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/3cnb2qmrrcw23uov?svg=true)](https://ci.appveyor.com/project/mbauman/invertedindices-jl)
-[![Code coverage](https://codecov.io/gh/mbauman/InvertedIndices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/mbauman/InvertedIndices.jl)
+[![Build Status](https://github.com/JuliaData/InvertedIndices.jl/workflows/CI/badge.svg)](https://github.com/JuliaData/InvertedIndices.jl/actions?query=workflow%3ACI+branch%3Amaster)
+[![Code coverage](https://codecov.io/gh/JuliaData/InvertedIndices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaData/InvertedIndices.jl)
 
 This very small package just exports one type: the `InvertedIndex`, or `Not`
 for short. It can wrap any supported index type and may be used as an index

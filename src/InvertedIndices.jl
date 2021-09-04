@@ -28,7 +28,7 @@ inverted index will similarly span multiple dimensions.
 InvertedIndex, Not
 
 """
-    BroadcastedInvertedIndex(x::Not)
+    BroadcastedInvertedIndex(x::InvertedIndex)
 
 A wrapper for `InvertedIndex` if it is used in broadcasting context.
 Since `InvertedIndex` does not have a reference to the collection it applies to

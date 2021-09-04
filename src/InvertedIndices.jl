@@ -37,6 +37,15 @@ Therefore it is the responsiblity of the caller to resolve the handling
 of the broadcast result.
 
 # Examples
+
+julia> Not(1) .=> sin
+InvertedIndices.BroadcastedInvertedIndex(InvertedIndex{Int64}(1)) => sin
+
+julia> Not(:col) .=> [minimum, maximum]
+2-element Vector{Pair{InvertedIndices.BroadcastedInvertedIndex, _A} where _A}:
+ InvertedIndices.BroadcastedInvertedIndex(InvertedIndex{Symbol}(:col)) => minimum
+ InvertedIndices.BroadcastedInvertedIndex(InvertedIndex{Symbol}(:col)) => maximum
+"""
 struct BroadcastedInvertedIndex
     sel::InvertedIndex
 end

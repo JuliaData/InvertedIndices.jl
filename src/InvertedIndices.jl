@@ -160,4 +160,7 @@ end
 @inline Base.to_indices(A, I::Tuple{Not{<:AbstractArray{Bool, 1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)
 @inline Base.to_indices(A, I::Tuple{Not{<:Union{Array{Bool}, BitArray}}}) = to_indices(A, (eachindex(A),), I)
 
+@inline Base.getindex(nt::NamedTuple, I::InvertedIndex{Symbol}) = nt[filter(!=(I.skip), keys(nt))]
+@inline Base.getindex(nt::NamedTuple, I::InvertedIndex{NTuple{N, Symbol}}) where {N} = nt[filter(∉(I.skip), keys(nt))]
+
 end # module

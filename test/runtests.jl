@@ -140,3 +140,24 @@ end
     @test (identity.(Not(1)) .=> [sin, cos] .=> Not(1)) ==
           [InvertedIndices.BroadcastedInvertedIndex(Not(1)) => sin => InvertedIndices.BroadcastedInvertedIndex(Not(1)), InvertedIndices.BroadcastedInvertedIndex(Not(1)) => cos => InvertedIndices.BroadcastedInvertedIndex(Not(1))]
 end
+
+@testset "named tuples" begin
+    nt = (a=1, b="2", c=:c)
+    @test nt[Not(:a)] === (b="2", c=:c)
+    @test nt[Not((:a,))] === (b="2", c=:c)
+    @test nt[Not((:a, :a))] === (b="2", c=:c)
+    @test nt[Not((:a, :b))] === (c=:c,)
+    @test nt[Not([:a, :b])] === (c=:c,)
+    @test nt[Not(())] === nt
+    @test_throws ErrorException nt[Not(:xxx)] === nt
+    @test_throws ErrorException nt[Not((:a, :xxx))] === nt
+
+    if VERSION >= v"1.1"
+        @test_broken @inferred nt[Not(:a)]
+        @test_broken @inferred nt[Not((:a, :b))]
+        f = nt -> nt[Not(:a)]
+        @test @inferred(f(nt)) === (b="2", c=:c)
+        f = nt -> nt[Not((:a, :b))]
+        @test @inferred(f(nt)) === (c=:c,)
+    end
+end

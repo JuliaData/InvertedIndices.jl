@@ -24,6 +24,10 @@ checked to ensure that all indices in `idx` are within the bounds of the array
 1-dimensional collection of its inverted indices. If `idx` spans multiple
 dimensions (like a multidimensional logical mask or `CartesianIndex`), then the
 inverted index will similarly span multiple dimensions.
+
+When indexing into a `NamedTuple`, the `InvertedIndex` can wrap either a `Symbol`,
+a vector of `Symbol`s, or a tuple of `Symbol`s and selects the fields of the `NamedTuple` that
+are not in `idx`.
 """
 InvertedIndex, Not
 
@@ -159,5 +163,14 @@ end
 # Arrays of Bool are even more confusing as they're sometimes linear and sometimes not
 @inline Base.to_indices(A, I::Tuple{Not{<:AbstractArray{Bool, 1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)
 @inline Base.to_indices(A, I::Tuple{Not{<:Union{Array{Bool}, BitArray}}}) = to_indices(A, (eachindex(A),), I)
+
+# a cleaner implementation is nt[filter(∉(I.skip), keys(nt))] instead of Base.structdiff, but this would only work on Julia 1.7+
+@inline Base.getindex(nt::NamedTuple, I::InvertedIndex{Symbol}) =
+    getindex(nt, Not((I.skip,)))
+@inline Base.getindex(nt::NamedTuple, I::InvertedIndex{<:AbstractVector{Symbol}}) =
+    getindex(nt, Not(Tuple(I.skip)))
+@inline Base.getindex(nt::NamedTuple, I::InvertedIndex{NTuple{N, Symbol}}) where {N} =
+    I.skip ⊆ keys(nt) ? Base.structdiff(nt, NamedTuple{I.skip}) :
+                        error("type NamedTuple has no fields $(join(I.skip, ", "))")
 
 end # module

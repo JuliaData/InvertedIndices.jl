@@ -97,7 +97,7 @@ _should_skip(s::CartesianIndex{1}, p::Integer) = s.I[1] == p
     checkbounds(Bool, A, I.skips) && eachindex(IndexLinear(), A) == eachindex(IndexLinear(), I.picks)
 @inline Base.checkbounds(::Type{Bool}, A::AbstractArray, I::InvertedIndexIterator) = checkbounds(Bool, A, I.skips) && axes(A) == axes(I.picks)
 @inline Base.checkindex(::Type{Bool}, indx::AbstractUnitRange, I::InvertedIndexIterator) = checkindex(Bool, indx, I.skips) && (indx,) == axes(I.picks)
-@inline Base.checkindex(::Type{Bool}, inds::Tuple, I::InvertedIndexIterator) = checkindex(Bool, indx, I.skips) && inds == axes(I.picks)
+@inline Base.checkindex(::Type{Bool}, indx::Tuple, I::InvertedIndexIterator) = checkindex(Bool, indx, I.skips) && indx == axes(I.picks)
 
 @inline Base.ensure_indexable(I::Tuple{InvertedIndexIterator, Vararg{Any}}) = (collect(I[1]), Base.ensure_indexable(tail(I))...)
 

@@ -103,6 +103,7 @@ end
     A = [1]
     ex = try A[Not(2,3)] catch ex; ex end
     @test occursin("Not([2, 3])", sprint(Base.showerror, ex))
+    @test checkindex(Bool, (Base.OneTo(3),), InvertedIndices.InvertedIndexIterator(CartesianIndices((1:2,)), 1:3))
 end
 
 @testset "broadcasting" begin

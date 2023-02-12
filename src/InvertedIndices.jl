@@ -8,16 +8,24 @@ struct InvertedIndex{S}
     skip::S
 end
 const Not = InvertedIndex
+
 # Support easily inverting multiple indices without a temporary array in Not([...])
 function InvertedIndex(i₁::T, i₂::T, iₓ::T...)  where T
     InvertedIndex(TupleVector((i₁, i₂, iₓ...)))
 end
 
+function DataFrames.InvertedIndices.InvertedIndex(i₁, i₂, iₓ...)
+    # use Vector{Any} to avoid unwanted promotion
+    InvertedIndex(Any[i₁, i₂, iₓ...])
+end
+
 """
-    InvertedIndex(idx)
-    Not(idx)
+    InvertedIndex(idx...)
+    Not(idx...)
 
 Construct an inverted index, selecting all indices not in the passed `idx`.
+If `idx` is more than one positional argument the selector is converted to
+a vector of these arguments.
 
 Upon indexing into an array, the `InvertedIndex` behaves like a 1-dimensional
 collection of the indices of the array that are not in `idx`. Bounds are

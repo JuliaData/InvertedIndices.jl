@@ -39,7 +39,7 @@ InvertedIndex, Not
 
 
 # A very simple and primitive static array to avoid allocations for Not(1,2,3) while fulfilling the indexing API
-struct TupleVector{T<:Tuple} <: AbstractVector{V where V}
+struct TupleVector{T<:NTuple{N, V}} <: AbstractVector{V} where {N, V<:Integer}
     data::T
 end
 Base.size(::TupleVector{<:NTuple{N}}) where {N} = (N,)

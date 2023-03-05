@@ -200,7 +200,7 @@ end
                         error("type NamedTuple has no fields $(join(I.skip, ", "))")
 
 @inline Base.to_indices(A, inds, I::Tuple{InvertedIndex{GeneralNotMultiIndex}, Vararg{Any}}) =
-    throw(ArgumentError("Conversion of other multiple arguments than integers " *
+    throw(ArgumentError("Conversion of multiple arguments other than integers " *
                         "of homogeneous type is not supported by `Not`."))
 
 end # module

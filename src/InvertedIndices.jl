@@ -18,7 +18,7 @@ function InvertedIndex(i₁::Integer, i₂::Integer, iₓ::Integer...)
 end
 
 """
-    GeneralNotMultiIndex(indices)
+    NotMultiIndex(indices)
 
     An unexported type that is meant to signal that `Not` was called with
     multiple indices that were not all integer. This is meant to allow for
@@ -29,12 +29,12 @@ end
     of this type and proper handling of such `Not` index must be handled
     explicitly by packages opting-in for support of non-integer indices.
 """
-struct GeneralNotMultiIndex
+struct NotMultiIndex
     indices
 end
 
 function InvertedIndex(i₁, i₂, iₓ...)
-    InvertedIndex(GeneralNotMultiIndex((i₁, i₂, iₓ...)))
+    InvertedIndex(NotMultiIndex((i₁, i₂, iₓ...)))
 end
 
 """
@@ -199,8 +199,7 @@ end
     I.skip ⊆ keys(nt) ? Base.structdiff(nt, NamedTuple{I.skip}) :
                         error("type NamedTuple has no fields $(join(I.skip, ", "))")
 
-@inline Base.to_indices(A, inds, I::Tuple{InvertedIndex{GeneralNotMultiIndex}, Vararg{Any}}) =
-    throw(ArgumentError("Conversion of multiple arguments other than integers " *
-                        "of homogeneous type is not supported by `Not`."))
+@inline Base.to_indices(A, inds, I::Tuple{InvertedIndex{NotMultiIndex}, Vararg{Any}}) =
+    throw(ArgumentError("Multiple arguments other than integers is not supported."))
 
 end # module

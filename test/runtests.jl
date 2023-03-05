@@ -182,6 +182,6 @@ end
     @test_throws ArgumentError Not(1, true)
 
     x = Not(1, "a")
-    @test x isa InvertedIndex{InvertedIndices.GeneralNotMultiIndex}
+    @test x isa InvertedIndex{InvertedIndices.NotMultiIndex}
     @test_throws ArgumentError v[x]
 end

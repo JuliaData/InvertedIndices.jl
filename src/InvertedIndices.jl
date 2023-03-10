@@ -20,14 +20,14 @@ end
 """
     NotMultiIndex(indices)
 
-    An unexported type that is meant to signal that `Not` was called with
-    multiple indices that were not all integer. This is meant to allow for
-    packages that allow for non-integer indexing to define custom handling
-    of such cases.
+An unexported type that is meant to signal that `Not` was called with
+multiple indices that were not all integer. This is meant to allow for
+packages that support non-integer indexing to define custom handling
+of such cases.
 
-    In particular `Base.to_indices` is on purpose not supported for values
-    of this type and proper handling of such `Not` index must be handled
-    explicitly by packages opting-in for support of non-integer indices.
+In particular `Base.to_indices` is on purpose not supported for values
+of this type and proper handling of such `Not` index must be handled
+explicitly by packages opting-in for support of non-integer indices.
 """
 struct NotMultiIndex
     indices
@@ -200,6 +200,6 @@ end
                         error("type NamedTuple has no fields $(join(I.skip, ", "))")
 
 @inline Base.to_indices(A, inds, I::Tuple{InvertedIndex{NotMultiIndex}, Vararg{Any}}) =
-    throw(ArgumentError("Multiple arguments other than integers is not supported."))
+    throw(ArgumentError("Multiple arguments other than integers are not supported."))
 
 end # module

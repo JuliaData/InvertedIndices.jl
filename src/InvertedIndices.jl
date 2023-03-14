@@ -8,8 +8,34 @@ struct InvertedIndex{S}
     skip::S
 end
 const Not = InvertedIndex
+
+nonBool2Int(x::Bool) = throw(ArgumentError("invalid index $x of type Bool"))
+nonBool2Int(x::Integer) = Int(x)
+
 # Support easily inverting multiple indices without a temporary array in Not([...])
-InvertedIndex(i₁::Integer, i₂::Integer, iₓ::Integer...) = InvertedIndex(TupleVector((i₁, i₂, iₓ...)))
+function InvertedIndex(i₁::Integer, i₂::Integer, iₓ::Integer...)
+    InvertedIndex(TupleVector((nonBool2Int(i₁), nonBool2Int(i₂), nonBool2Int.(iₓ)...)))
+end
+
+"""
+    NotMultiIndex(indices)
+
+An unexported type that is meant to signal that `Not` was called with
+multiple indices that were not all integer. This is meant to allow for
+packages that support non-integer indexing to define custom handling
+of such cases.
+
+In particular `Base.to_indices` is on purpose not supported for values
+of this type and proper handling of such `Not` index must be handled
+explicitly by packages opting-in for support of non-integer indices.
+"""
+struct NotMultiIndex
+    indices
+end
+
+function InvertedIndex(i₁, i₂, iₓ...)
+    InvertedIndex(NotMultiIndex((i₁, i₂, iₓ...)))
+end
 
 """
     InvertedIndex(idx)
@@ -172,5 +198,8 @@ end
 @inline Base.getindex(nt::NamedTuple, I::InvertedIndex{NTuple{N, Symbol}}) where {N} =
     I.skip ⊆ keys(nt) ? Base.structdiff(nt, NamedTuple{I.skip}) :
                         error("type NamedTuple has no fields $(join(I.skip, ", "))")
+
+@inline Base.to_indices(A, inds, I::Tuple{InvertedIndex{NotMultiIndex}, Vararg{Any}}) =
+    throw(ArgumentError("Multiple arguments other than integers are not supported."))
 
 end # module

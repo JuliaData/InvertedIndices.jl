@@ -162,3 +162,26 @@ end
         @test @inferred(f(nt)) === (c=:c,)
     end
 end
+
+@testset "multi index" begin
+    x = Not(1, 2)
+    v = [1, 2, 3]
+    @test x.skip.data === (1, 2)
+    @test v[x] == [3]
+    x = Not(0x1, 0x2)
+    @test x.skip.data === (1, 2)
+    @test v[x] == [3]
+    x = Not(1, 0x2)
+    @test x.skip.data === (1, 2)
+    @test v[x] == [3]
+
+    @test v[Not(begin, end)] == [2]
+    @test v[Not(begin, 0x3)] == [2]
+
+    @test_throws ArgumentError v[Not(true)]
+    @test_throws ArgumentError Not(1, true)
+
+    x = Not(1, "a")
+    @test x isa InvertedIndex{InvertedIndices.NotMultiIndex}
+    @test_throws ArgumentError v[x]
+end

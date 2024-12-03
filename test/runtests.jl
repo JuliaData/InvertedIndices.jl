@@ -185,3 +185,52 @@ end
     @test x isa InvertedIndex{InvertedIndices.NotMultiIndex}
     @test_throws ArgumentError v[x]
 end
+
+returns(val) = _->val
+@testset "type stability" begin
+    for arr in (
+            1:5,
+            reshape(1:5*3, 5, 3),
+            reshape(1:5*3*7, 5, 3, 7),
+            reshape(1:5*3*7*11, 5, 3, 7, 11),
+        )
+        I = to_indices(arr, (Not(iseven.(arr)),))[1]
+        @test all(isodd, I)
+        @allocated(foreach(returns(nothing), I))
+        @test @allocated(foreach(returns(nothing), I)) == 0
+        @test @inferred(collect(I)) == vec(filter(!iseven, arr))
+    end
+end
+
+struct NamedVector{T,A,B} <: AbstractArray{T,1}
+    data::A
+    names::B
+end
+function NamedVector(data, names)
+    @assert size(data) == size(names)
+    NamedVector{eltype(data), typeof(data), typeof(names)}(data, names)
+end
+Base.size(n::NamedVector) = size(n.data)
+Base.getindex(n::NamedVector, i::Int) = n.data[i]
+Base.to_index(n::NamedVector, name::Symbol) = findfirst(==(name), n.names)
+Base.checkbounds(::Type{Bool}, n::NamedVector, names::AbstractArray{Symbol}) = all(name in n.names for name in names)
+
+@testset "check invalid skipped indices and transform them" begin
+    @test_throws "invalid index" [1, 2, 3, 4][Not(Not([1.5]))]
+    @test_throws "invalid index" [1, 2, 3, 4][Not(Integer[true, 2])]
+
+    n = NamedVector(1:4, [:a, :b, :c, :d]);
+    @test n[Not([:a,:b])] == n[Not(1:2)] == [3, 4]
+    @test n[Not([:c,:d])] == n[Not(3:4)] == [1, 2]
+    @test n[Not(:a)] == n[Not(1)] == [2,3,4]
+    @test n[Not(:b)] == n[Not(2)] == [1,3,4]
+
+    # Unsorted index names are broken
+    n = NamedVector(1:4, [:d, :b, :c, :a]);
+    @test_broken n[Not([:a,:b])] == n[Not([4,2])]== n[[:d,:c]] == [1, 3]
+    @test_broken n[Not([:c,:d])] == n[Not([3,1])] == n[[:b,:a]] == [2, 4]
+    @test n[Not(:a)] == n[Not(4)] == [1,2,3]
+    @test n[Not(:b)] == n[Not(2)] == [1,3,4]
+    @test n[Not(:c)] == n[Not(3)] == [1,2,4]
+    @test n[Not(:d)] == n[Not(1)] == [2,3,4]
+end

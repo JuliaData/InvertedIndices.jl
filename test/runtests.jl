@@ -186,6 +186,7 @@ end
     @test_throws ArgumentError v[x]
 end
 
+returns(val) = _->val
 @testset "type stability" begin
     for arr in (
             1:5,
@@ -195,7 +196,7 @@ end
         )
         I = to_indices(arr, (Not(iseven.(arr)),))[1]
         @test all(isodd, I)
-        @allocated(foreach(Returns(nothing), I))
-        @test @allocated(foreach(Returns(nothing), I)) == 0
+        @allocated(foreach(returns(nothing), I))
+        @test @allocated(foreach(returns(nothing), I)) == 0
     end
 end

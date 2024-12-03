@@ -116,8 +116,6 @@ Base.size(III::InvertedIndexIterator) = (length(III.picks) - length(III.skips),)
             (pickitr[1], (nothing, pickitr[2])) :
             (pickitr[1], (skipitr, pickitr[2]))
 end
-Base.iterate(I::InvertedIndexIterator, ::Tuple{Any, Nothing}) = nothing
-Base.iterate(I::InvertedIndexIterator, ::Tuple{Nothing, Nothing}) = nothing
 @inline function Base.iterate(I::InvertedIndexIterator, (_, pickstate)::Tuple{Nothing, Any})
     pickitr = iterate(I.picks, pickstate)
     pickitr === nothing && return nothing

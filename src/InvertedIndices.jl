@@ -101,15 +101,37 @@ end
 InvertedIndexIterator(skips, picks) = InvertedIndexIterator{eltype(picks), typeof(skips), typeof(picks)}(skips, picks)
 Base.size(III::InvertedIndexIterator) = (length(III.picks) - length(III.skips),)
 
-@inline Base.iterate(I::InvertedIndexIterator) = iterate(I, (iterate(I.skips), iterate(I.picks)))
-Base.iterate(I::InvertedIndexIterator, ::Tuple{Any, Nothing}) = nothing
-@inline function Base.iterate(I::InvertedIndexIterator, (skipitr, pickitr))
+@inline function Base.iterate(I::InvertedIndexIterator)
+    skipitr = iterate(I.skips)
+    pickitr = iterate(I.picks)
+    pickitr === nothing && return nothing
+    while should_skip(skipitr, pickitr)
+        skipitr = iterate(I.skips, skipitr[2])
+        pickitr = iterate(I.picks, pickitr[2])
+        pickitr === nothing && return nothing
+    end
+    # This is a little silly, but splitting the tuple here allows inference to normalize
+    # Tuple{Union{Nothing, Tuple}, Tuple} to Union{Tuple{Nothing, Tuple}, Tuple{Tuple, Tuple}}
+    return skipitr === nothing ?
+            (pickitr[1], (nothing, pickitr[2])) :
+            (pickitr[1], (skipitr, pickitr[2]))
+end
+@inline function Base.iterate(I::InvertedIndexIterator, (_, pickstate)::Tuple{Nothing, Any})
+    pickitr = iterate(I.picks, pickstate)
+    pickitr === nothing && return nothing
+    return (pickitr[1], (nothing, pickitr[2]))
+end
+@inline function Base.iterate(I::InvertedIndexIterator, (skipitr, pickstate)::Tuple)
+    pickitr = iterate(I.picks, pickstate)
+    pickitr === nothing && return nothing
     while should_skip(skipitr, pickitr)
         skipitr = iterate(I.skips, tail(skipitr)...)
         pickitr = iterate(I.picks, tail(pickitr)...)
         pickitr === nothing && return nothing
     end
-    return (pickitr[1], (skipitr, iterate(I.picks, tail(pickitr)...)))
+    return skipitr === nothing ?
+            (pickitr[1], (nothing, pickitr[2])) :
+            (pickitr[1], (skipitr, pickitr[2]))
 end
 Base.collect(III::InvertedIndexIterator) = [i for i in III]
 

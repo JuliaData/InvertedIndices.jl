@@ -185,3 +185,18 @@ end
     @test x isa InvertedIndex{InvertedIndices.NotMultiIndex}
     @test_throws ArgumentError v[x]
 end
+
+returns(val) = _->val
+@testset "type stability" begin
+    for arr in (
+            1:5,
+            reshape(1:5*3, 5, 3),
+            reshape(1:5*3*7, 5, 3, 7),
+            reshape(1:5*3*7*11, 5, 3, 7, 11),
+        )
+        I = to_indices(arr, (Not(iseven.(arr)),))[1]
+        @test all(isodd, I)
+        @allocated(foreach(returns(nothing), I))
+        @test @allocated(foreach(returns(nothing), I)) == 0
+    end
+end

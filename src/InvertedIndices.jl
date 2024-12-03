@@ -94,19 +94,22 @@ end
 
 # Like Base.LogicalIndex, the InvertedIndexIterator is a pseudo-vector that is
 # just used as an iterator and does not support getindex.
-struct InvertedIndexIterator{T,S,P} <: AbstractVector{T}
+struct InvertedIndexIterator{T,S,P,F} <: AbstractVector{T}
     skips::S
     picks::P
+    toidx::F
 end
-InvertedIndexIterator(skips, picks) = InvertedIndexIterator{eltype(picks), typeof(skips), typeof(picks)}(skips, picks)
+InvertedIndexIterator(skips, picks, toidx) = InvertedIndexIterator{eltype(picks), typeof(skips), typeof(picks), typeof(toidx)}(skips, picks, toidx)
 Base.size(III::InvertedIndexIterator) = (length(III.picks) - length(III.skips),)
 
+_transformitr(f, ::Nothing) = nothing
+_transformitr(f, s) = (f(s[1]), s[2])
 @inline function Base.iterate(I::InvertedIndexIterator)
-    skipitr = iterate(I.skips)
+    skipitr = _transformitr(I.toidx, iterate(I.skips))
     pickitr = iterate(I.picks)
     pickitr === nothing && return nothing
     while should_skip(skipitr, pickitr)
-        skipitr = iterate(I.skips, skipitr[2])
+        skipitr = _transformitr(I.toidx, iterate(I.skips, skipitr[2]))
         pickitr = iterate(I.picks, pickitr[2])
         pickitr === nothing && return nothing
     end
@@ -125,7 +128,7 @@ end
     pickitr = iterate(I.picks, pickstate)
     pickitr === nothing && return nothing
     while should_skip(skipitr, pickitr)
-        skipitr = iterate(I.skips, tail(skipitr)...)
+        skipitr = _transformitr(I.toidx, iterate(I.skips, skipitr[2]))
         pickitr = iterate(I.picks, tail(pickitr)...)
         pickitr === nothing && return nothing
     end
@@ -181,7 +184,7 @@ uniquesort(x) = x
     new_indices = to_indices(A, inds, (I[1].skip, tail(I)...))
     skips = uniquesort(new_indices[1])
     picks = spanned_indices(inds, skips)[1]
-    return (InvertedIndexIterator(skips, picks), tail(new_indices)...)
+    return (InvertedIndexIterator(skips, picks, idx->to_indices(A, inds, (idx, tail(I)...))[1]), tail(new_indices)...)
 end
 
 struct ZeroDArray{T} <: AbstractArray{T,0}
@@ -194,7 +197,7 @@ Base.getindex(Z::ZeroDArray) = Z.x
 function Base.to_indices(A, inds, I::Tuple{InvertedIndex{<:CartesianIndex}, Vararg{Any}})
     skips = ZeroDArray(I[1].skip)
     picks, tails = spanned_indices(inds, skips)
-    return (InvertedIndexIterator(skips, picks), to_indices(A, tails, tail(I))...)
+    return (InvertedIndexIterator(skips, picks, idx->to_indices(A, inds, (idx, tail(I)...))[1]), to_indices(A, tails, tail(I))...)
 end
 
 # Either return a CartesianRange or an axis vector

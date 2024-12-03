@@ -133,7 +133,17 @@ end
             (pickitr[1], (nothing, pickitr[2])) :
             (pickitr[1], (skipitr, pickitr[2]))
 end
-Base.collect(III::InvertedIndexIterator) = [i for i in III]
+function Base.collect(III::InvertedIndexIterator{T}) where {T}
+    !isconcretetype(T) && return [i for i in III] # use widening if T is not concrete
+    v = Vector{T}(undef, length(III))
+    i = 0
+    for elt in III
+        i += 1
+        @inbounds v[i] = elt
+    end
+    i != length(v) && throw(AssertionError("length of inverted index does not match iterated count"))
+    return v
+end
 
 should_skip(::Nothing, ::Any) = false
 should_skip(s::Tuple, p::Tuple) = _should_skip(s[1], p[1])

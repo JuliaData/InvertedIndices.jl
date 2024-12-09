@@ -186,7 +186,7 @@ end
 # index to a linear index.
 @inline Base.to_indices(A, I::Tuple{Not{<:NIdx{1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)
 @inline Base.to_indices(A, I::Tuple{Not{<:NIdx}}) = to_indices(A, axes(A), I)
-if VERSION < v"1.11"
+if VERSION < v"1.11.0-DEV.1157"
     # Arrays of Bool are even more confusing as they're sometimes linear and sometimes not
     # This was addressed in Base with JuliaLang/julia#45869.
     @inline Base.to_indices(A, I::Tuple{Not{<:AbstractArray{Bool, 1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)

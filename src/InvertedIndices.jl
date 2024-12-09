@@ -183,12 +183,15 @@ end
 
 # This is an interesting need — we need this because otherwise indexing with a
 # single multidimensional boolean array ends up comparing a multidimensional cartesian
-# index to a linear index. Does this need addressing in Base, too?
+# index to a linear index.
 @inline Base.to_indices(A, I::Tuple{Not{<:NIdx{1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)
 @inline Base.to_indices(A, I::Tuple{Not{<:NIdx}}) = to_indices(A, axes(A), I)
-# Arrays of Bool are even more confusing as they're sometimes linear and sometimes not
-@inline Base.to_indices(A, I::Tuple{Not{<:AbstractArray{Bool, 1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)
-@inline Base.to_indices(A, I::Tuple{Not{<:Union{Array{Bool}, BitArray}}}) = to_indices(A, (eachindex(A),), I)
+if VERSION < v"1.11.0-DEV.1157"
+    # Arrays of Bool are even more confusing as they're sometimes linear and sometimes not
+    # This was addressed in Base with JuliaLang/julia#45869.
+    @inline Base.to_indices(A, I::Tuple{Not{<:AbstractArray{Bool, 1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)
+    @inline Base.to_indices(A, I::Tuple{Not{<:Union{Array{Bool}, BitArray}}}) = to_indices(A, (eachindex(A),), I)
+end
 
 # a cleaner implementation is nt[filter(∉(I.skip), keys(nt))] instead of Base.structdiff, but this would only work on Julia 1.7+
 @inline Base.getindex(nt::NamedTuple, I::InvertedIndex{Symbol}) =

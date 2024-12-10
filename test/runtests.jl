@@ -195,7 +195,9 @@ returns(val) = _->val
             reshape(1:5*3*7*11, 5, 3, 7, 11),
         )
         I = to_indices(arr, (Not(iseven.(arr)),))[1]
-        @test all(isodd, I)
+        @test all(isodd, arr[I])
+        @test all(isodd, LinearIndices(arr)[I])
+        @test all(isodd, LinearIndices(arr)[collect(I)])
         @allocated(foreach(returns(nothing), I))
         @test @allocated(foreach(returns(nothing), I)) == 0
         @test @inferred(collect(I)) == vec(filter(!iseven, arr))

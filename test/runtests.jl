@@ -200,6 +200,6 @@ returns(val) = _->val
         @test all(isodd, LinearIndices(arr)[collect(I)])
         @allocated(foreach(returns(nothing), I))
         @test @allocated(foreach(returns(nothing), I)) == 0
-        @test @inferred(collect(I)) == vec(filter(!iseven, arr))
+        @test @inferred(LinearIndices(arr)[collect(I)]) == vec(filter(!iseven, arr))
     end
 end

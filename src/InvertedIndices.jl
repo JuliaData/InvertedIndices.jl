@@ -97,41 +97,53 @@ end
 struct InvertedIndexIterator{T,S,P} <: AbstractVector{T}
     skips::S
     picks::P
+    length::Int
 end
-InvertedIndexIterator(skips, picks) = InvertedIndexIterator{eltype(picks), typeof(skips), typeof(picks)}(skips, picks)
-Base.size(III::InvertedIndexIterator) = (length(III.picks) - length(III.skips),)
+InvertedIndexIterator(skips, picks) = InvertedIndexIterator{eltype(picks), typeof(skips), typeof(picks)}(skips, picks, length(picks) - length(skips))
+Base.size(III::InvertedIndexIterator) = (III.length,)
+
+# Ensure iteration consumes all skips by the time it hits the end of the picks
+assert_iteration_finished(I, n, ::Nothing) = (@assert n == I.length "InvertedIndexIterator iterated $n values but expected $(I.length)"; true)
+assert_iteration_finished(I, _, (skipvalue, _)) = throw(ArgumentError("did not find index $skipvalue in axis $(I.picks), so could not skip it"))
+# Ensure iteration does not generate more than I.length values
+assert_iteration_not_finished(I, n, ::Nothing) = @assert n <= I.length "InvertedIndexIterator iterated more values than expected"
+assert_iteration_not_finished(I, n, (skipvalue, _)) = n <= I.length || throw(ArgumentError("did not find index $skipvalue in axis $(I.picks), so could not skip it"))
 
 @inline function Base.iterate(I::InvertedIndexIterator)
+    n = 0
     skipitr = iterate(I.skips)
     pickitr = iterate(I.picks)
-    pickitr === nothing && return nothing
+    pickitr === nothing && assert_iteration_finished(I, n, skipitr) && return nothing
     while should_skip(skipitr, pickitr)
         skipitr = iterate(I.skips, skipitr[2])
         pickitr = iterate(I.picks, pickitr[2])
-        pickitr === nothing && return nothing
+        pickitr === nothing && assert_iteration_finished(I, n, skipitr) && return nothing
     end
+    n += 1; assert_iteration_not_finished(I, n, skipitr)
     # This is a little silly, but splitting the tuple here allows inference to normalize
     # Tuple{Union{Nothing, Tuple}, Tuple} to Union{Tuple{Nothing, Tuple}, Tuple{Tuple, Tuple}}
     return skipitr === nothing ?
-            (pickitr[1], (nothing, pickitr[2])) :
-            (pickitr[1], (skipitr, pickitr[2]))
+            (pickitr[1], (nothing, pickitr[2], n)) :
+            (pickitr[1], (skipitr, pickitr[2], n))
 end
-@inline function Base.iterate(I::InvertedIndexIterator, (_, pickstate)::Tuple{Nothing, Any})
+@inline function Base.iterate(I::InvertedIndexIterator, (_, pickstate, n)::Tuple{Nothing, Any, Any})
     pickitr = iterate(I.picks, pickstate)
-    pickitr === nothing && return nothing
-    return (pickitr[1], (nothing, pickitr[2]))
+    pickitr === nothing && assert_iteration_finished(I, n, nothing) && return nothing
+    n += 1; assert_iteration_not_finished(I, n, nothing)
+    return (pickitr[1], (nothing, pickitr[2], n))
 end
-@inline function Base.iterate(I::InvertedIndexIterator, (skipitr, pickstate)::Tuple)
+@inline function Base.iterate(I::InvertedIndexIterator, (skipitr, pickstate, n)::Tuple)
     pickitr = iterate(I.picks, pickstate)
-    pickitr === nothing && return nothing
+    pickitr === nothing && assert_iteration_finished(I, n, skipitr) && return nothing
     while should_skip(skipitr, pickitr)
         skipitr = iterate(I.skips, tail(skipitr)...)
         pickitr = iterate(I.picks, tail(pickitr)...)
-        pickitr === nothing && return nothing
+        pickitr === nothing && assert_iteration_finished(I, n, skipitr) && return nothing
     end
+    n += 1; assert_iteration_not_finished(I, n, skipitr)
     return skipitr === nothing ?
-            (pickitr[1], (nothing, pickitr[2])) :
-            (pickitr[1], (skipitr, pickitr[2]))
+            (pickitr[1], (nothing, pickitr[2], n)) :
+            (pickitr[1], (skipitr, pickitr[2], n))
 end
 function Base.collect(III::InvertedIndexIterator{T}) where {T}
     !isconcretetype(T) && return [i for i in III] # use widening if T is not concrete

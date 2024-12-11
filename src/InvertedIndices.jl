@@ -109,6 +109,25 @@ _transformitr(f, s) = (f(s[1]), s[2])
     pickitr = iterate(I.picks)
     pickitr === nothing && return nothing
     while should_skip(skipitr, pickitr)
+        skipitr = iterate(I.skips, skipitr[2])
+        pickitr = iterate(I.picks, pickitr[2])
+        pickitr === nothing && return nothing
+    end
+    # This is a little silly, but splitting the tuple here allows inference to normalize
+    # Tuple{Union{Nothing, Tuple}, Tuple} to Union{Tuple{Nothing, Tuple}, Tuple{Tuple, Tuple}}
+    return skipitr === nothing ?
+            (pickitr[1], (nothing, pickitr[2])) :
+            (pickitr[1], (skipitr, pickitr[2]))
+end
+@inline function Base.iterate(I::InvertedIndexIterator, (_, pickstate)::Tuple{Nothing, Any})
+    pickitr = iterate(I.picks, pickstate)
+    pickitr === nothing && return nothing
+    return (pickitr[1], (nothing, pickitr[2]))
+end
+@inline function Base.iterate(I::InvertedIndexIterator, (skipitr, pickstate)::Tuple)
+    pickitr = iterate(I.picks, pickstate)
+    pickitr === nothing && return nothing
+    while should_skip(skipitr, pickitr)
         skipitr = _transformitr(I.toidx, iterate(I.skips, skipitr[2]))
         pickitr = iterate(I.picks, pickitr[2])
         pickitr === nothing && return nothing
@@ -218,12 +237,15 @@ end
 
 # This is an interesting need — we need this because otherwise indexing with a
 # single multidimensional boolean array ends up comparing a multidimensional cartesian
-# index to a linear index. Does this need addressing in Base, too?
+# index to a linear index.
 @inline Base.to_indices(A, I::Tuple{Not{<:NIdx{1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)
 @inline Base.to_indices(A, I::Tuple{Not{<:NIdx}}) = to_indices(A, axes(A), I)
-# Arrays of Bool are even more confusing as they're sometimes linear and sometimes not
-@inline Base.to_indices(A, I::Tuple{Not{<:AbstractArray{Bool, 1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)
-@inline Base.to_indices(A, I::Tuple{Not{<:Union{Array{Bool}, BitArray}}}) = to_indices(A, (eachindex(A),), I)
+if VERSION < v"1.11.0-DEV.1157"
+    # Arrays of Bool are even more confusing as they're sometimes linear and sometimes not
+    # This was addressed in Base with JuliaLang/julia#45869.
+    @inline Base.to_indices(A, I::Tuple{Not{<:AbstractArray{Bool, 1}}}) = to_indices(A, (eachindex(IndexLinear(), A),), I)
+    @inline Base.to_indices(A, I::Tuple{Not{<:Union{Array{Bool}, BitArray}}}) = to_indices(A, (eachindex(A),), I)
+end
 
 # a cleaner implementation is nt[filter(∉(I.skip), keys(nt))] instead of Base.structdiff, but this would only work on Julia 1.7+
 @inline Base.getindex(nt::NamedTuple, I::InvertedIndex{Symbol}) =

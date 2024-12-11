@@ -153,14 +153,12 @@ end
     @test_throws ErrorException nt[Not(:xxx)] === nt
     @test_throws ErrorException nt[Not((:a, :xxx))] === nt
 
-    if VERSION >= v"1.1"
-        @test_broken @inferred nt[Not(:a)]
-        @test_broken @inferred nt[Not((:a, :b))]
-        f = nt -> nt[Not(:a)]
-        @test @inferred(f(nt)) === (b="2", c=:c)
-        f = nt -> nt[Not((:a, :b))]
-        @test @inferred(f(nt)) === (c=:c,)
-    end
+    @test_broken @inferred nt[Not(:a)]
+    @test_broken @inferred nt[Not((:a, :b))]
+    f = nt -> nt[Not(:a)]
+    @test @inferred(f(nt)) === (b="2", c=:c)
+    f = nt -> nt[Not((:a, :b))]
+    @test @inferred(f(nt)) === (c=:c,)
 end
 
 @testset "multi index" begin

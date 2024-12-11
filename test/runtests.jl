@@ -203,3 +203,43 @@ returns(val) = _->val
         @test @inferred(LinearIndices(arr)[collect(I)]) == vec(filter(!iseven, arr))
     end
 end
+
+struct NamedVector{T,A,B} <: AbstractArray{T,1}
+    data::A
+    names::B
+end
+function NamedVector(data, names)
+    @assert size(data) == size(names)
+    NamedVector{eltype(data), typeof(data), typeof(names)}(data, names)
+end
+Base.size(n::NamedVector) = size(n.data)
+Base.getindex(n::NamedVector, i::Int) = n.data[i]
+Base.to_index(n::NamedVector, name::Symbol) = findfirst(==(name), n.names)
+Base.checkbounds(::Type{Bool}, n::NamedVector, names::AbstractArray{Symbol}) = all(name in n.names for name in names)
+
+@testset "ensure skipped indices are skipped" begin
+    @test_throws ArgumentError [1, 2, 3, 4][Not([1.5])]
+    @test_throws ArgumentError [1, 2, 3, 4][Not(Not([1.5]))]
+    # Without error checking/checkbounds, this segfaults with a large enough array:
+    @test_throws ArgumentError rand(100)[Not(begin+.5:end)]
+    @test_broken try
+        [1, 2, 3, 4][Not(Integer[true, 2])]
+        false
+    catch ex
+        ex isa ArgumentError && startswith(ex.msg, "invalid index")
+    end
+
+    n = NamedVector(1:4, [:a, :b, :c, :d]);
+    @test_broken n[Not([:a,:b])] == n[Not(1:2)] == [3, 4]
+    @test_broken n[Not([:c,:d])] == n[Not(3:4)] == [1, 2]
+    @test n[Not(:a)] == n[Not(1)] == [2,3,4]
+    @test n[Not(:b)] == n[Not(2)] == [1,3,4]
+
+    n = NamedVector(1:4, [:d, :b, :c, :a]);
+    @test_broken n[Not([:a,:b])] == n[Not([4,2])]== n[[:d,:c]] == [1, 3]
+    @test_broken n[Not([:c,:d])] == n[Not([3,1])] == n[[:b,:a]] == [2, 4]
+    @test n[Not(:a)] == n[Not(4)] == [1,2,3]
+    @test n[Not(:b)] == n[Not(2)] == [1,3,4]
+    @test n[Not(:c)] == n[Not(3)] == [1,2,4]
+    @test n[Not(:d)] == n[Not(1)] == [2,3,4]
+end

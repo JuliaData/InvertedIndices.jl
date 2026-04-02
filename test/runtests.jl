@@ -2,10 +2,10 @@ using InvertedIndices
 using Test
 using OffsetArrays
 
-@testset "0-d" begin
-    A = fill(1)
+@testset "0-d" for A in (fill(1), view([1], fill(1)), reshape(view([1], 1), ()))
     @test A[Not(fill(A.==1))] == []
     @test A[Not(CartesianIndex())] == []
+    @test A[Not(CartesianIndices(()))] == []
     @test A[Not(fill(A.==2))] == [1]
     A[Not(fill(A.==2))] = fill(0)
     @test A[] == 0
@@ -22,7 +22,7 @@ end
     @test @views A[Not(end)] == A[Not(end:end)] == A[Not(A.==13)] == collect(-10:12)
     @test A[Not(iseven.(A))] == A[isodd.(A)] == collect(-9:2:13)
     @test A[Not([])] == A[collect(1:end)] == collect(-10:13)
-    @test A[Not(1:end)] == A[Not(:)] == A[[]] == []
+    @test A[Not(1:end)] == A[Not(CartesianIndices(A))] == A[Not(:)] == A[[]] == []
     @test A[Not([1,1,1,2,2])] == A[3:end]
     @test A[Not([end,end,end,end-1,end-1])] == A[1:end-2]
     @test A[Not(3,2,1)] == A[Not(3,2,3,1,2,1)] == A[4:end]
@@ -74,6 +74,7 @@ end
     @test A[:, Not(2)] == (@view A[:, Not(2)]) == A[:,[1;3:end]]
     @test A[Not(2), Not(2)] == (@view A[Not(2), Not(2)]) == A[[1;3:end],[1;3:end]]
     R = collect(CartesianIndices(size(A)))
+    @test A[Not(R)] == A[Not(CartesianIndices(axes(A)))] == []
     @test A[Not(first(R))] == (@view A[Not(first(R))]) == A[2:end]
     @test A[Not(R[1:2])] == (@view A[Not(R[1:2])]) == A[3:end]
     @test A[Not(iseven.(A))] == (@view A[Not(iseven.(A))]) == A[isodd.(A)] == collect(-9:2:13)
@@ -86,13 +87,13 @@ end
     inds = axes(A)
     f₁, l₁ = first(inds[1]), last(inds[1])
     f₂, l₂ = first(inds[2]), last(inds[2])
-    # TODO: Re-enable these tests for 3-d after PLI deprecation
     if ndims(A) == 2
         @test A[Not(f₁+1), f₂:l₂] == (@view A[Not(f₁+1), f₂:l₂]) == A[[f₁,l₁],f₂:l₂]
         @test A[f₁:l₁, Not(f₂+1)] == (@view A[f₁:l₁, Not(f₂+1)]) == A[f₁:l₁,[f₂;f₂+2:l₂]]
         @test A[Not(f₁+1), Not(f₂+1)] == (@view A[Not(f₁+1), Not(f₂+1)]) == A[[f₁,l₁],[f₂;f₂+2:l₂]]
     end
     R = collect(CartesianIndices(axes(A)))
+    @test A[Not(R)] == A[Not(CartesianIndices(axes(A)))] == []
     @test A[Not(first(R))] == (@view A[Not(first(R))]) == A[LinearIndices(A)[2:end]]
     @test A[Not(R[1:2])] == (@view A[Not(R[1:2])]) == A[LinearIndices(A)[3:end]]
     @test A[Not(iseven.(A))] == (@view A[Not(iseven.(A))]) == A[isodd.(A)] == collect(-9:2:13)

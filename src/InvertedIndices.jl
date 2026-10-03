@@ -177,6 +177,12 @@ uniquesort(r::AbstractRange) = step(r) > 0 ? r : step(r) == 0 ? r[end:end] : rev
 uniquesort(A::Base.LogicalIndex) = A
 uniquesort(x) = x
 
+# Keep Cartesian coordinates together instead of expanding the block into axis selectors.
+@inline Base.to_indices(A, inds, I::Tuple{InvertedIndex{<:CartesianIndices}, Vararg{Any}}) =
+    to_indices(A, inds, (Not(vec(I[1].skip)), tail(I)...))
+@inline Base.to_indices(A, inds, I::Tuple{InvertedIndex{<:CartesianIndices{1}}, Vararg{Any}}) =
+    to_indices(A, inds, (Not(I[1].skip.indices[1]), tail(I)...))
+
 @inline function Base.to_indices(A, inds, I::Tuple{InvertedIndex, Vararg{Any}})
     new_indices = to_indices(A, inds, (I[1].skip, tail(I)...))
     skips = uniquesort(new_indices[1])

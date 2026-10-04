@@ -29,6 +29,11 @@ using OffsetArrays
         @test A[Not(CartesianIndices((2:3,)))] == A[Not(2:3)]
         @test view(A, Not(CartesianIndices((2:3,)))) == A[Not(2:3)]
     end
+    A = collect(1:4)
+    @test A[Not(CartesianIndex(2))] == A[Not(2)]
+    @test view(A, Not(CartesianIndex(2))) == A[Not(2)]
+    @test A[Not([CartesianIndex(2), CartesianIndex(3)])] == A[Not(2:3)]
+    @test view(A, Not([CartesianIndex(2), CartesianIndex(3)])) == A[Not(2:3)]
     for A in (fill(1), view([1], fill(1)), reshape(view([1], 1), ()))
         @test A[Not(CartesianIndices(()))] == []
     end

@@ -2,6 +2,60 @@ using InvertedIndices
 using Test
 using OffsetArrays
 
+@testset "Cartesian block complements" begin
+    for A in (reshape(collect(1:12), 4, 3),
+              reshape(collect(1:24), 4, 3, 2),
+              OffsetArray(reshape(collect(1:12), 4, 3), -2, 1),
+              OffsetArray(reshape(collect(1:24), 4, 3, 2), -2, 1, 4),
+              view(reshape(collect(1:30), 6, 5), 2:5, 2:4))
+        partial = map(r -> first(r)+1:min(first(r)+2, last(r)), axes(A))
+        empty = (first(axes(A, 1)):first(axes(A, 1))-1, Base.tail(axes(A))...)
+        for ranges in (partial, empty, axes(A))
+            skipped = CartesianIndices(ranges)
+            expected = [A[i] for i in CartesianIndices(axes(A)) if i ∉ skipped]
+            @test A[Not(skipped)] == expected
+            @test view(A, Not(skipped)) == expected
+            B = copy(A)
+            B[Not(skipped)] .= -1
+            @test all(i -> B[i] == (i ∈ skipped ? A[i] : -1), CartesianIndices(axes(A)))
+            B[Not(skipped)] = fill(-2, length(expected))
+            @test all(i -> B[i] == (i ∈ skipped ? A[i] : -2), CartesianIndices(axes(A)))
+        end
+        outside = (first(axes(A, 1))-1:first(axes(A, 1)), Base.tail(axes(A))...)
+        @test_throws BoundsError A[Not(CartesianIndices(outside))]
+        @test_throws BoundsError view(A, Not(CartesianIndices(outside)))
+    end
+    for A in (collect(1:4), reshape(collect(1:12), 4, 3))
+        @test A[Not(CartesianIndices((2:3,)))] == A[Not(2:3)]
+        @test view(A, Not(CartesianIndices((2:3,)))) == A[Not(2:3)]
+    end
+    A = collect(1:4)
+    @test A[Not(CartesianIndex(2))] == A[Not(2)]
+    @test view(A, Not(CartesianIndex(2))) == A[Not(2)]
+    @test A[Not([CartesianIndex(2), CartesianIndex(3)])] == A[Not(2:3)]
+    @test view(A, Not([CartesianIndex(2), CartesianIndex(3)])) == A[Not(2:3)]
+    for A in (fill(1), view([1], fill(1)), reshape(view([1], 1), ()))
+        @test A[Not(CartesianIndices(()))] == []
+    end
+end
+
+@testset "Following indices retain their dimensions" begin
+    A = reshape(collect(1:12), 4, 3)
+    for skip in (1, 1:2, [1, 3])
+        remaining = setdiff(1:4, skip isa Integer ? [skip] : skip)
+        for following in (fill(CartesianIndex()), [CartesianIndex()], CartesianIndices(()))
+            @test A[Not(skip), following, 1] == A[remaining, following, 1]
+        end
+    end
+    A = reshape(collect(1:24), 4, 3, 2)
+    mask = falses(4, 3)
+    mask[2:3, 1:2] .= true
+    for skip in (mask, Array(mask))
+        @test A[Not(skip), 1] == A[:, :, 1][.!mask]
+        @test view(A, Not(skip), 1) == A[:, :, 1][.!mask]
+    end
+end
+
 @testset "0-d" begin
     A = fill(1)
     @test A[Not(fill(A.==1))] == []
